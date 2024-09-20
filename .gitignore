@@ -1,0 +1,11 @@
+output/
+delete/
+output*/
+archive/
+data/*.tplot
+data/*.gz
+linux64/
+geopack/
+other/
+idl_geopack*
+*.tplot

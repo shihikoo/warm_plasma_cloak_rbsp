@@ -1,0 +1,76 @@
+;+++++++++++++++ RBSP HOPE L2SA ENERGY SPECTRA +++++++++++++++++++++++++++++
+; http://www.rbsp-ect.lanl.gov/data_pub/rbspa/hope/level2/
+; http://www.rbsp-ect.lanl.gov/data_pub/rbspb/hope/level2/
+;
+;------------------ INPUT PARAMETERS ----------------------------------
+; probe:      VAP id/number
+;             An array of integers (1, 2) or strings ('a','b') or ('A' or 'B') 
+;             indicating the 2 s/c
+;
+; species:    0: H+, 1: e-, 2: He+, 3: O+
+;
+; units:      flux units, i.e. 'DIFF FLUX' or 'EFLUX'
+;
+; time:       Start date/time string in tplot format ('yyyy-mm-dd/hh:mm:ss')
+; timespan:   Set the time span
+;             (keywords: SECONDS, MINUTES, HOURS, DAYS (DEFAULT))
+;
+; eph_sc:     (1 or 2 or 'a' or 'b') Spacecraft number to be used in ephemeris axis
+;
+; KEYWORDS:
+;             y_axis_units --> 'eV', 'keV' or 'mu'
+;             energy_units_in_flux --> 'eV' or 'keV'
+;             PATH --> manually enter the path to the data files
+;                      If the PATH keyword is not set then the environment
+;		               variable 'RBSP_$_HOPE_L2SA' is used.
+;	          FLN --> manually enter the file name
+;	    	          If the FLN keyword is not set then the following 
+;		              file name is assumed: 'rbsp$_rel02_ect-hope-sci-L2SA_v*.cdf'
+;             NEW_NAME --> manually enter the tplot variable name
+;----------------------------------------------------------------------
+time='2013-10-15/00:00:00'
+timespan, time, 3, /DAYS ; SECONDS, MINUTES, HOURS, DAYS (DEFAULT)
+
+probe    = [1] ; 1 or 2 or 'a' or 'b' or 'A' or 'B'
+species  = [3] ; 0: H+, 1: e-, 2: He+, 3: O+
+
+units = 'DIFF FLUX' ; ('DIFF FLUX' | 'EFLUX' | 'DIST FUNC'
+energy_units_in_flux = 'eV' ; per 'keV' or per 'eV'
+y_axis_units = 'eV' ; 'eV' or 'keV', or 'mu'
+
+eph_data = 0 ; (0|1)
+aux_data = 0 ; (0|1)
+
+eph_sc = probe(n_elements(probe)-1) ; (1,2)
+;----------------------------------------------------------------------
+;PATH = '~/data/rbsp-a/ect/hope/'
+;FLN  = 'rbspa_rel01_ect-hope-sci-L2SA_20130115_v3.0.1.cdf'
+;NEW_NAME = 'HOPE_electron_flux'
+
+plot_rbsp_hope_l2sa_enspec, probe, $
+							species, $
+							units, $
+			    			y_axis_units=y_axis_units, $
+			    			energy_units_in_flux=energy_units_in_flux, $
+			    			eph_data=eph_data, $
+			    			aux_data=aux_data, $
+			    			new_name=NEW_NAME, $
+		        			path=PATH, $
+		        			fln=FLN
+
+;----------------------------------------------------------------------
+; Read ephemeris information and plot ephemeris axis
+;----------------------------------------------------------------------
+eph_sc = 'A'
+get_rbsp_hope_ephem, eph_sc
+
+var_label = 'RBSP'+eph_sc+'_EPH_'
+var_label = var_label + ['MLT','L','DIST']
+tplot, var_label=var_label
+
+;----------------------------------------------------------------------
+; PLOT L2SA energy spectra
+;----------------------------------------------------------------------
+tplot, 'RBSP*HOPE*L2SA*'
+
+
