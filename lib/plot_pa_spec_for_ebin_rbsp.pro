@@ -6,7 +6,7 @@
 ; Created 09/04/2024
 ; ------------------------------------------------------------------------------------------------------------------------------
 
-pro plot_pa_spec_for_ebin_rbsp, sc,  specie,  units_name, flux_name, pa_name = pa_name, average_time = average_time, time_avg = time_avg, energy_limit = energy_limit 
+pro plot_pa_spec_for_ebin_rbsp, sc,  specie,  units_name, flux_name, pa_name = pa_name, average_time = average_time, time_avg = time_avg, energy_limit = energy_limit , region_name = region_name
   common SHARE1, ENERGY_BINS, DENERGY_BINS, PA_BINS, ERROR_MESSAGE
 
   ; ----------------------------------------------------------
@@ -63,19 +63,15 @@ pro plot_pa_spec_for_ebin_rbsp, sc,  specie,  units_name, flux_name, pa_name = p
   get_data, flux_name, data = data
   index = where(~finite(total(data.y,2)),ct)
   if ct gt 0 then flux_pa[index,*,*] = !values.f_nan
-
+  
 ; store pitch angle tplot
   str = {x: time_avg, y: flux_pa, v: pa_pa}
   store_data, pa_name, data = str, dlim = dlim, lim = lim
   options, pa_name, 'ytitle', 'PA!CEN Peak'
-  zlim, pa_name, 1, 1000
+  zlim, pa_name, 10, 1000
   ylim, pa_name, 0, 180
-  
+
   ; for k = 0, nenergybins-1 do store_data, pa_name+'_'+string(k,format='(i2.2)'), data = {x:time_avg, y:reform(flux_pa[*,*,k]), v:reform(pa_pa[*,*,k])} , dlim =dlim , lim = lim
   ; for k = 0, nenergybins-1 do options, pa_name+'_'+string(k,format='(i2.2)'), 'ytitle', 'pa!C'+string(energy_bins[k])
    
-  ; tplot_names, 'RBSP*'
-  
-  ; stop
-
 end

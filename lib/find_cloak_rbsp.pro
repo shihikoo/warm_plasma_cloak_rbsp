@@ -32,10 +32,10 @@ pro find_cloak_rbsp, sc = sc, $
   def_pap_factor = def_pap_factor $
   , diff_en = diff_en $
   , diff_pa = diff_pa $
-  , energy_limit = energy_limit, remove_isotropic = remove_isotropic , isotropic_pa_def = isotropic_pa_def $
-  , release = release
-
-
+  , diff_time = diff_time $
+  , energy_limit = energy_limit, remove_isotropic = remove_isotropic, isotropic_pa_def = isotropic_pa_def $
+  , release = release $ 
+  , stop = stop
   common SHARE1, ENERGY_BINS, DENERGY_BINS, PA_BINS, ERROR_MESSAGE
 
   ; -----------------------------------------------------
@@ -53,7 +53,7 @@ pro find_cloak_rbsp, sc = sc, $
     setenv, 'RBSP_A_HOPE_PA=/net/nfs/mimas/cluster12/data/rbsp-a/ect/hope_rel04/PA/'
     setenv, 'RBSP_B_HOPE_PA=/net/nfs/mimas/cluster12/data/rbsp-b/ect/hope_rel04/PA/'
   endif
-  
+
   if release eq 'rel05' then begin
     setenv, 'RBSP_A_HOPE=/net/nfs/mimas/cluster12/data/rbsp-a/ect/hope_rel05/'
     setenv, 'RBSP_B_HOPE=/net/nfs/mimas/cluster12/data/rbsp-b/ect/hope_rel05/'
@@ -63,18 +63,18 @@ pro find_cloak_rbsp, sc = sc, $
     setenv, 'RBSP_B_HOPE_PA=/net/nfs/mimas/cluster12/data/rbsp-b/ect/hope_rel05/PA/'
   endif
 
-  print, GETENV('RBSP_A_HOPE') 
-  print, GETENV('RBSP_B_HOPE') 
-  print, GETENV('RBSP_A_HOPE_L2SA')   
-  print, GETENV('RBSP_B_HOPE_L2SA') 
-  print, GETENV('RBSP_A_HOPE_PA') 
-  print, GETENV('RBSP_B_HOPE_PA') 
+  print, getenv('RBSP_A_HOPE')
+  print, getenv('RBSP_B_HOPE')
+  print, getenv('RBSP_A_HOPE_L2SA')
+  print, getenv('RBSP_B_HOPE_L2SA')
+  print, getenv('RBSP_A_HOPE_PA')
+  print, getenv('RBSP_B_HOPE_PA')
 
   if n_elements(sc) eq 0 then sc = 1
   if sc eq 1 then sc_str = 'A'
   if sc eq 2 then sc_str = 'B'
 
-  if n_elements(sp) eq 0 then sp = 3
+  if n_elements(sp) eq 0 then sp = 0
   sp_str = strcompress(sp, /remove_all)
 
   if n_elements(average_time) eq 0 then average_time = 5 * 60 ; in seconds
@@ -104,9 +104,9 @@ pro find_cloak_rbsp, sc = sc, $
   ; cloak_energy_range = [3, 3000]
   ; low_energy_range = [0, 3]
 
-  high_energy_bin_range = [0, 17]
-  cloak_energy_bin_range = [18, 63]
-  low_energy_bin_range = [64, 71]
+  high_energy_bin_range = [0, 25]
+  cloak_energy_bin_range = [26, 56] ;[18, 63]
+  low_energy_bin_range = [57, 71] ;[64, 71]
 
   full_pitch_angle_range = [0, 180]
 
@@ -182,37 +182,7 @@ pro find_cloak_rbsp, sc = sc, $
       endif
     endif
   endif
-  
-  ; ---- 
-  ; tplot_names, '*ebins*', names = names 
-  ; if ~keyword_set(names) then  begin  
-    tplot_names, '*HPCA*', names = names
-    if keyword_set(names) then store_data, delete = names
-
-    tplot_names, '*subtracted*', names = names
-    if keyword_set(names) then store_data, delete = names
-
-    tplot_names, 'RBSPA_HOPE_l3_paspec_sp1_DIFFFLUX_*', names = names
-    if keyword_set(names) then store_data, delete = names
-    tplot_names, 'RBSPA_HOPE_l3_paspec_sp1_EFLUX_*', names = names
-    if keyword_set(names) then store_data, delete = names
-
-    tplot_names, 'RBSPA_HOPE_l3_red_enspec_sp1_DIFFFLUX_*', names = names
-    if keyword_set(names) then store_data, delete = names
-    tplot_names, 'RBSPA_HOPE_l3_red_enspec_sp1_EFLUX_*', names = names
-    if keyword_set(names) then store_data, delete = names
-
-    tplot_names, 'RBSPA_HOPE_l3_paspec_sp0_DIFFFLUX_*', names = names
-    if keyword_set(names) then store_data, delete = names
-    tplot_names, 'RBSPA_HOPE_l3_paspec_sp0_EFLUX_*', names = names
-    if keyword_set(names) then store_data, delete = names
-
-    tplot_names, 'RBSPA_HOPE_l3_red_enspec_sp0_DIFFFLUX_*', names = names
-    if keyword_set(names) then store_data, delete = names
-    tplot_names, 'RBSPA_HOPE_l3_red_enspec_sp0_EFLUX_*', names = names
-    if keyword_set(names) then store_data, delete = names
-  ; endif 
-
+  if keyword_set(stop) then stop
   ; -------------------------------------------------------------
   ; Load the tplot varibles
   ; -------------------------------------------------------------
@@ -227,7 +197,10 @@ pro find_cloak_rbsp, sc = sc, $
     plot_rbsp_magephem, sc, bfield_model = bmodel, all = 0, variable = 'InvLat'
     plot_rbsp_magephem, sc, bfield_model = bmodel, all = 0, variable = 'CDMAG_R'
 
+    get_data, all_tplot_names.mlt_name, data = data, dlim = dlim, lim = lim
+    store_data, 'mlt_original', data = data, dlim = dlim, lim = lim
     average_mlt_tplot_variable_with_given_time, all_tplot_names.mlt_name, average_time, time_avg
+
     average_tplot_variable_with_given_time, all_tplot_names.ephemeris_names, average_time, time_avg
 
     ; extract x,y,z ephemeris data for tplot purpose
@@ -235,6 +208,7 @@ pro find_cloak_rbsp, sc = sc, $
     store_data, all_tplot_names.x_gse_name, data = {x: data.x, y: data.y[*, 0]}
     store_data, all_tplot_names.y_gse_name, data = {x: data.x, y: data.y[*, 1]}
     store_data, all_tplot_names.z_gse_name, data = {x: data.x, y: data.y[*, 2]}
+
     get_data, all_tplot_names.gsm_name, data = data
     store_data, all_tplot_names.x_gsm_name, data = {x: data.x, y: data.y[*, 0]}
     store_data, all_tplot_names.y_gsm_name, data = {x: data.x, y: data.y[*, 1]}
@@ -251,7 +225,7 @@ pro find_cloak_rbsp, sc = sc, $
     if ~keyword_set(names) then begin
       ERROR_MESSAGE = 'No B field data'
       log_error, store_tplot, data_filename, log_filename, t_s, t_e
-      RETURN
+      RETURNsubstorm_phase_tplot_name
     endif
 
     average_tplot_variable_with_given_time, all_tplot_names.mag_names, average_time, time_avg
@@ -265,6 +239,7 @@ pro find_cloak_rbsp, sc = sc, $
     average_tplot_variable_with_given_time, all_tplot_names.moments_names, average_time, time_avg
 
     calculate_para_velocity, all_tplot_names.h1_velocity_name, all_tplot_names.mag_name, all_tplot_names.h1_velocity_par_name, all_tplot_names.h1_velocity_perp_name
+    
     calculate_para_velocity, all_tplot_names.o1_velocity_name, all_tplot_names.mag_name, all_tplot_names.o1_velocity_par_name, all_tplot_names.o1_velocity_perp_name
   endif
 
@@ -273,7 +248,7 @@ pro find_cloak_rbsp, sc = sc, $
   tplot_names, all_tplot_names.beta_name, names = names1
   tplot_names, all_tplot_names.density_ratio_name, names = names2
   if ~keyword_set(names1) or ~keyword_set(names2) then begin
-    calculate_plasma_beta, all_tplot_names.h1_pressure_name, all_tplot_names.o1_pressure_name, all_tplot_names.mag_pressure_name, all_tplot_names.o1_density_name, all_tplot_names.h1_density_name, all_tplot_names.beta_name, all_tplot_names.p_total_name, all_tplot_names.density_ratio_name
+    calculate_plasma_beta, all_tplot_names.h1_pressure_name, all_tplot_names.o1_pressure_name, all_tplot_names.mag_pressure_name, all_tplot_names.o1_density_name, all_tplot_names.h1_density_name, all_tplot_names.beta_name, all_tplot_names.p_total_name, all_tplot_names.density_ratio_name, error_message=error_message
 
     if ERROR_MESSAGE ne '' then begin
       log_error, store_tplot, data_filename, log_filename, t_s, t_e
@@ -292,14 +267,13 @@ pro find_cloak_rbsp, sc = sc, $
     ; Because region is stored as numeric numbers and the '1','2','3' digit stores magnetosphere region identification, 1 => within magnetosphere, 0 => not. Here we take the modulo of 10. to retrive the '1','2','3' digit.
     index = where((r_data(all_tplot_names.region_name, /y) mod 10.) gt 0, ct_magnetosphere)
 
-    ; ct_magnetosphere = TOTAL(magnetosphere_region,/nan)
     if ct_magnetosphere eq 0 then begin
       ERROR_MESSAGE = 'No magnetosphere data'
       log_error, store_tplot, data_filename, log_filename, t_s, t_e
       RETURN
     endif
   endif
-  
+
   ; ----------------------------------------------------------------
   ; Load enegy spectra
   ; ----------------------------------------------------------------
@@ -318,15 +292,6 @@ pro find_cloak_rbsp, sc = sc, $
   tplot_names, all_tplot_names.eflux_h1_pa_name, names = names
   if ~keyword_set(names) then plot_rbsp_hope_l3_paspec, sc, 0, 'EFLUX', energy_units_in_flux = 'eV', eph_data = 0, aux_data = 0
 
-  tplot_names, all_tplot_names.diffflux_ion_high_energy_pa_name, names = names
-  if ~keyword_set(names) then plot_rbsp_hope_l3_paspec, sc, sp, 'DIFF FLUX', energy_bins_range = high_energy_bin_range, energy_units_in_flux = 'eV', eph_data = 0, aux_data = 0
-  
-  tplot_names, all_tplot_names.diffflux_ion_cloak_energy_pa_name, names = names
-  if ~keyword_set(names) then plot_rbsp_hope_l3_paspec, sc, sp, 'DIFF FLUX', energy_bins_range = cloak_energy_bin_range, energy_units_in_flux = 'eV', eph_data = 0, aux_data = 0
-
-  tplot_names, all_tplot_names.diffflux_ion_low_energy_pa_name, names = names
-  if ~keyword_set(names) then plot_rbsp_hope_l3_paspec, sc, sp, 'DIFF FLUX', energy_bins_range = low_energy_bin_range, energy_units_in_flux = 'eV', eph_data = 0, aux_data = 0
-
   ; -- Load O+ energy spectra "difflux" and "eflux" --
   tplot_names, all_tplot_names.diffflux_o1_name, names = names
   if ~keyword_set(names) then plot_rbsp_hope_l3_red_enspec, sc, 3, 'DIFF FLUX', energy_units_in_flux = 'eV', pa_range = full_pitch_angle_range, aux_data = 0, eph_data = 0
@@ -341,19 +306,43 @@ pro find_cloak_rbsp, sc = sc, $
   tplot_names, all_tplot_names.eflux_o1_pa_name, names = names
   if ~keyword_set(names) then plot_rbsp_hope_l3_paspec, sc, 3, 'EFLUX', energy_range = full_energy_range, energy_units_in_flux = 'eV', eph_data = 0, aux_data = 0
 
-  tplot_names, all_tplot_names.diffflux_h1_name, names = names
+  ; -- Load target ion energy spectra "difflux" and "eflux" --
+  tplot_names, all_tplot_names.diffflux_ion_name, names = names
+  if ~keyword_set(names) then plot_rbsp_hope_l3_red_enspec, sc, sp, 'DIFF FLUX', energy_units_in_flux = 'eV', pa_range = full_pitch_angle_range, aux_data = 0, eph_data = 0
+
+  tplot_names, all_tplot_names.eflux_ion_name, names = names
+  if ~keyword_set(names) then plot_rbsp_hope_l3_red_enspec, sc, sp, 'EFLUX', energy_units_in_flux = 'eV', pa_range = full_pitch_angle_range, aux_data = 0, eph_data = 0
+
+  ; -- Load target ion pitch angle spectra "difflux" and "eflux" --
+  tplot_names, all_tplot_names.diffflux_ion_pa_name, names = names
+  if ~keyword_set(names) then plot_rbsp_hope_l3_paspec, sc, sp, 'DIFF FLUX', energy_range = full_energy_range, energy_units_in_flux = 'eV', eph_data = 0, aux_data = 0
+
+  tplot_names, all_tplot_names.eflux_ion_pa_name, names = names
+  if ~keyword_set(names) then plot_rbsp_hope_l3_paspec, sc, sp, 'EFLUX', energy_range = full_energy_range, energy_units_in_flux = 'eV', eph_data = 0, aux_data = 0
+
+  ; -- load H+ ion pitch angle spectra for different energy ranges
+  tplot_names, all_tplot_names.diffflux_ion_high_energy_pa_name, names = names
+  if ~keyword_set(names) then plot_rbsp_hope_l3_paspec, sc, sp, 'DIFF FLUX', energy_bins_range = high_energy_bin_range, energy_units_in_flux = 'eV', eph_data = 0, aux_data = 0
+
+  tplot_names, all_tplot_names.diffflux_ion_cloak_energy_pa_name, names = names
+  if ~keyword_set(names) then plot_rbsp_hope_l3_paspec, sc, sp, 'DIFF FLUX', energy_bins_range = cloak_energy_bin_range, energy_units_in_flux = 'eV', eph_data = 0, aux_data = 0
+
+  tplot_names, all_tplot_names.diffflux_ion_low_energy_pa_name, names = names
+  if ~keyword_set(names) then plot_rbsp_hope_l3_paspec, sc, sp, 'DIFF FLUX', energy_bins_range = low_energy_bin_range, energy_units_in_flux = 'eV', eph_data = 0, aux_data = 0
+
+  tplot_names, all_tplot_names.diffflux_ion_name, names = names
   if ~keyword_set(names) then begin
     ERROR_MESSAGE = 'hope data missing'
     log_error, store_tplot, data_filename, log_filename, t_s, t_e
     RETURN
   endif
-  
+
   ; remove perigee hope data (energy bins are different)
-  get_data, all_tplot_names.diffflux_h1_name, data = data
+  get_data, all_tplot_names.diffflux_ion_name, data = data
   index = where(data.v[*, 71] gt 20, ct)
   if ct gt 0 then begin
     remove_perigee_hope_data, [all_tplot_names.diffflux_h1_name, all_tplot_names.eflux_h1_name, all_tplot_names.diffflux_o1_name, all_tplot_names.eflux_o1_name, all_tplot_names.diffflux_h1_pa_name, all_tplot_names.eflux_h1_pa_name, all_tplot_names.diffflux_o1_pa_name, all_tplot_names.eflux_o1_pa_name], all_tplot_names.diffflux_h1_name
-    
+
     index = where(data.v[*, 71] le 20, ct)
     if ct eq 0 then begin
       ERROR_MESSAGE = 'No non perigee data'
@@ -365,14 +354,14 @@ pro find_cloak_rbsp, sc = sc, $
   ; average energy spectra and pitch angle spectra data
   get_data, all_tplot_names.diffflux_ion_name, data = data
   if data.x[1] - data.x[0] ne average_time then begin
-    average_tplot_variable_with_given_time, [all_tplot_names.diffflux_h1_name, all_tplot_names.eflux_h1_name, all_tplot_names.diffflux_o1_name, all_tplot_names.eflux_o1_name], average_time, time_avg
+    average_tplot_variable_with_given_time, [all_tplot_names.diffflux_ion_name, all_tplot_names.eflux_ion_name, all_tplot_names.diffflux_h1_name, all_tplot_names.eflux_h1_name, all_tplot_names.diffflux_o1_name, all_tplot_names.eflux_o1_name], average_time, time_avg
 
-    average_tplot_variable_with_given_time, [all_tplot_names.diffflux_h1_pa_name, all_tplot_names.eflux_h1_pa_name, all_tplot_names.diffflux_o1_pa_name, all_tplot_names.eflux_o1_pa_name], average_time, time_avg, keep_v = 1
+    average_tplot_variable_with_given_time, [all_tplot_names.diffflux_ion_pa_name, all_tplot_names.eflux_ion_pa_name, all_tplot_names.diffflux_h1_pa_name, all_tplot_names.eflux_h1_pa_name, all_tplot_names.diffflux_o1_pa_name, all_tplot_names.eflux_o1_pa_name], average_time, time_avg, keep_v = 1
   endif
-  
+
   ; ------------------------------------------------------------------------------------------------------
   ; preprocess energy spectra
-  ; --------------------------------------------------------------------------------------------------------- 
+  ; ---------------------------------------------------------------------------------------------------------
   tplot_names, all_tplot_names.diffflux_ion_name + '_Original', names = names
   if ~keyword_set(names) then begin
     preprocess_enspec, [sc], [sp], all_tplot_names.diffflux_ion_name, all_tplot_names.eflux_ion_name, average_time, time_avg, all_tplot_names.region_name, t_s = adjusted_t_s, t_e = adjusted_t_e, plot_low_count_filter = plot_low_count_filter, plot_path = plot_path
@@ -386,10 +375,10 @@ pro find_cloak_rbsp, sc = sc, $
   ; ------------------------------------------------------------------------------
   ; Identify O+ cloak for different directions or pitch angle ranges
   ; -------------------------------------------------------------------------------
-  tplot_names, all_tplot_names.pap_range_name, names = names
-  ; if ~keyword_set(names[0]) then $
-  identify_cloak_rbsp, [sc], [sp], all_tplot_names.diffflux_ion_name, average_time, time_avg, all_tplot_names.region_name, t_s = adjusted_t_s, t_e = adjusted_t_e, pa_count_line = pa_count_line, epcut_name = all_tplot_names.epcut_name, epcut_beam_name = all_tplot_names.epcut_beam_name, epcut_cloak_name = all_tplot_names.epcut_cloak_name, flux_threshold = flux_threshold, def_pap_factor = def_pap_factor, pa_name = all_tplot_names.pa_name, pa_eflux_name = all_tplot_names.pa_eflux_name, pap_name = all_tplot_names.pap_name, pap_beam_name = all_tplot_names.pap_beam_name, pap_cloak_name = all_tplot_names.pap_cloak_name, pap_range_name = all_tplot_names.pap_range_name, int_flux_name = all_tplot_names.int_diffflux_ion_name, diff_en = diff_en, diff_pa = diff_pa, energy_limit = energy_limit, remove_isotropic = remove_isotropic, isotropic_pa_def = isotropic_pa_def
-  
+  tplot_names, all_tplot_names.pap_cloak_name, names = names
+  if ~keyword_set(names[0]) then $
+  identify_cloak_rbsp, [sc], [sp], all_tplot_names.diffflux_ion_name, average_time, time_avg, all_tplot_names.region_name, t_s = adjusted_t_s, t_e = adjusted_t_e, pa_count_line = pa_count_line, epcut_name = all_tplot_names.epcut_name, epcut_bidirection_name = all_tplot_names.epcut_bidirection_name, epcut_cloak_name = all_tplot_names.epcut_cloak_name, flux_threshold = flux_threshold, def_pap_factor = def_pap_factor, pa_name = all_tplot_names.pa_name, pa_eflux_name = all_tplot_names.pa_eflux_name, pap_name = all_tplot_names.pap_name, pap_bidirection_name = all_tplot_names.pap_bidirection_name, pap_cloak_name = all_tplot_names.pap_cloak_name, pap_range_name = all_tplot_names.pap_range_name, int_flux_name = all_tplot_names.int_diffflux_ion_name, diff_en = diff_en, diff_pa = diff_pa, diff_time = diff_time, energy_limit = energy_limit, remove_isotropic = remove_isotropic, isotropic_pa_def = isotropic_pa_def
+
   ; -- write to log that cloak is found --
   write_text_to_file, log_filename, ts + ' TO ' + te + '-------- Found O+ Beam------ ' + string((systime(/seconds) - running_time_s) / 60.) + ' minitues used', /append
 
@@ -400,23 +389,14 @@ pro find_cloak_rbsp, sc = sc, $
   ; if ~keyword_set(names) then $
   ; calculate_moments_rbsp_for_cloak, sc, sp, average_time, all_tplot_names.erange_cloak_name, all_tplot_names.pap_cloak_name, all_tplot_names.pap_range_name, all_tplot_names.density_name, all_tplot_names.pressure_name, all_tplot_names.velocity_name, all_tplot_names.temperature_name
 
-  ; ----------------------------------------------------------------------------------
-  ; Calculate convective electric field from Vperp of H+ and O+ and magnetic field
-  ; ------------------------------------------------------------------------------------
-  tplot_names, all_tplot_names.electric_field_h_name, names = names
-  if ~keyword_set(names) then calculate_e_field_from_vperp, all_tplot_names.h1_velocity_perp_name, all_tplot_names.bt_name, all_tplot_names.electric_field_h_name
-
-  tplot_names, all_tplot_names.electric_field_o_name, names = names
-  if ~keyword_set(names) then calculate_e_field_from_vperp, all_tplot_names.o1_velocity_perp_name, all_tplot_names.bt_name, all_tplot_names.electric_field_o_name
-
   ; -----------------------------------------------------------------------
   ; Load solar wind data from OMNI
   ; ----------------------------------------------------------------------
-  tplot_names, all_tplot_names.sw_p_name + '_1h', names = names
+  tplot_names, all_tplot_names.sw_v_1H_name, names = names
   if ~keyword_set(names) then begin
     read_omni, all = 1, hr = 1
 
-    calculate_solarwind_delayed_1h, all_tplot_names.epcut_cloak_name, all_tplot_names.dist_name, [all_tplot_names.imf_bx_name, all_tplot_names.imf_by_gsm_name, all_tplot_names.imf_bz_gsm_name, all_tplot_names.sw_v_name, all_tplot_names.sw_p_name, all_tplot_names.sw_n_name, all_tplot_names.sw_t_name, all_tplot_names.sw_mack_number_name], [all_tplot_names.imf_bx_name, all_tplot_names.imf_by_gsm_name, all_tplot_names.imf_bz_gsm_name, all_tplot_names.sw_v_name, all_tplot_names.sw_p_name, all_tplot_names.sw_n_name, all_tplot_names.sw_t_name, all_tplot_names.sw_mack_number_name] + '_1h'
+    calculate_solarwind_delayed_1h, all_tplot_names.epcut_cloak_name, all_tplot_names.dist_name, [all_tplot_names.imf_bx_name, all_tplot_names.imf_by_gsm_name, all_tplot_names.imf_bz_gsm_name, all_tplot_names.sw_v_name, all_tplot_names.sw_p_name, all_tplot_names.sw_n_name, all_tplot_names.sw_t_name, all_tplot_names.sw_mack_number_name], [all_tplot_names.imf_bx_1H_name, all_tplot_names.imf_by_gsm_1H_name, all_tplot_names.imf_bz_gsm_1H_name, all_tplot_names.sw_v_1H_name, all_tplot_names.sw_p_1H_name, all_tplot_names.sw_n_1H_name, all_tplot_names.sw_t_1H_name, all_tplot_names.sw_mack_number_1H_name]
 
     average_tplot_variable_with_given_time, all_tplot_names.omni_tplot_names, average_time, time_avg
   endif
@@ -437,17 +417,19 @@ pro find_cloak_rbsp, sc = sc, $
     data_f107 = interpol(data.y, data.x, time_avg, /nan)
     store_data, all_tplot_names.f107_name, data = {x: time_avg, y: data_f107, dlim: dlim, lim: lim}
   endif
-
+  
   ; ------------------------------------------------------------------------
   ; Load storm data phase data and store phase flag into tplot variables
   ; ------------------------------------------------------------------------
   tplot_names, all_tplot_names.storm_phase_tplot_name, names = names
   if ~keyword_set(names) then find_storm_phase, time_avg, storm_phase_filename = 'data/storm_phase_list.csv', storm_phase_tplot_name = all_tplot_names.storm_phase_tplot_name
+
   ; -----------------------------------------------------------------------
   ; Load substorm data, and store substorm flag into tplot variables
   ; ----------------------------------------------------------------------
   tplot_names, all_tplot_names.substorm_phase_tplot_name, names = names
-  if ~keyword_set(names) then find_substorm_phase, time_avg, substorm_phase_filename = 'data/substorm_list_2016_2017.csv', substorm_phase_tplot_name = all_tplot_names.substorm_phase_tplot_name
+  ; if ~keyword_set(names) then 
+  find_substorm_phase, time_avg, substorm_phase_filename = 'data/substorms-forsyth-20010101_050000_to_20241231_050000.csv', substorm_phase_tplot_name = all_tplot_names.substorm_phase_tplot_name
 
   ; ------------- -------------------------------------------------------
   ; Save tplot varialbes
@@ -464,14 +446,13 @@ pro find_cloak_rbsp, sc = sc, $
   ; --------------------------------------------------------------
   ; Overview plots
   ; --------------------------------------------------------------
+  if keyword_set(ps_plot) or keyword_set(idl_plot) then make_cloak_tplots_rbsp, sc_str, sp_str, t_s, t_e, t_dt, plot_path, all_tplot_names, displaytime = displaytime, ps = ps_plot, idl_plot = idl_plot
 
-  if keyword_set(ps_plot) or keyword_set(idl_plot) then make_cloak_tplots_multi_rbsp, sc_str, sp_str, t_s, t_e, t_dt, plot_path, all_tplot_names, displaytime = displaytime, ps = ps_plot, idl_plot = idl_plot 
-  
   ; --------------------------------------
   ; Save the data
   ; --------------------------------------
-  if keyword_set(save_data) then save_cloak_data_multi_rbsp, date_s, date_e, data_path, all_tplot_names, t_s, t_e
-  
+  if keyword_set(save_data) then save_cloak_data_rbsp, date_s, data_path, all_tplot_names, t_s, t_e
+
   ; ----------------------------------------------------------------
   ; Print, running_time_s
   ; -----------------------------------------------------------------
